@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="funjs.js"></script>
+    </head>
+    <body>
+        <div tap="LOADING">Loading . . .</div>
+        <div tap="CONTENT">
+            <button tap="ADD">Add!</button>
+            <table tap="ITEMLIST">
+                <thead><tr><th>Label</th><th>Info</th></tr></thead>
+                <tbody>
+                    <tr tap="ITEMS">
+                        <td tap="label"></td>
+                        <td tap="info"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div tap="ITEM">
+                Label <input type="text" /><br />
+                Info <input type="text" /><br />
+                <button tap="POST">Add!</button>
+                <button tap="PUT">Update!</button>
+                <button tap="DELETE">Delete!</button>
+                <button tap="CANCEL">Cancel</button>
+            </div>
+        </div>
+
+        <script src="tap.js"></script>
+        <script>
+            // Visible States
+            const loading = ["LOADING"];
+            const content = ["CONTENT"];
+            const item = ["ITEM"];
+            const itemList = ["ADD", "ITEMLIST", "ITEMS"];
+            const viewItem = [...item, "CANCEL"];
+            const newItem = [...viewItem, "POST"];
+            const editButtons = ["PUT", "DELETE"];
+
+            // UI Actions
+            const showItemList = () => tapIt ([tapHide(item), tapShow (itemList)]);
+
+            const add = () => tapIt ([
+                tapHide([...itemList, ...editButtons]),
+                tapShow(newItem)
+            ]);
+
+            const appInit = async () => {
+                await sleep(1);
+                tapIt ([
+                    tapLoad (tapList ("ITEMS") ([
+                        {label: "task1", info: "info1"},
+                        {label: "task2", info: "info2"},
+                    ])),
+                    tapShow (content),
+                    tapHide (loading),
+                ]);
+                showItemList();
+            };
+
+            // Bind State
+            tapIt ([
+                tapHide ([...content, ...item]),
+                tapClick ([
+                    ["ADD", add],
+                    ["CANCEL", showItemList],
+                ]),
+                tapInit (appInit),
+            ]);
+        </script>
+    </body>
+</html>
