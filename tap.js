@@ -20,6 +20,7 @@ const tapObjs = F.compose (
 
 
 // DOM Checks
+const nodeIs = x => F.compose (F.equals (x), F.prop ("nodeName"));
 
 // DOM Updates
 const setDisplay = v => e => e.style.display = v;
@@ -27,7 +28,11 @@ const show = setDisplay ("");
 const hide = setDisplay ("none");
 const addClick = fn => e => { e.onclick = e => fn(e, tapObjs (e)); return e; }
 const drop = e => {e.parentNode.removeChild(e); return e;}
-const setText = e => data => {e.innerText = data; return e;}
+const setText = e => data => {
+    if (nodeIs ("INPUT") (e)) { e.value = data; }
+    else { e.innerText = data; }
+    return e;
+}
 
 // DOM Adds
 makeClone = e => {
@@ -49,11 +54,10 @@ const _click = cfg => {
     });
 };
 
-const fillChildTaps = (parent, data) => {
+const fillChildTaps = data => parent => {
     over (allTaps (parent)) (child => {
         F.compose (
-            show,
-            setText (child),
+            F.unless (d => d === undefined, setText (child)),
             F.flip (F.prop) (data),
             tapNameAttr
         ) (child);
@@ -61,7 +65,7 @@ const fillChildTaps = (parent, data) => {
 };
 
 const addRows = (row, data) => {
-    fillChildTaps (row, F.head (data));
+    fillChildTaps (F.head (data)) (row);
     const rest = F.tail (data);
     if (F.emptyList (rest)) { return; }
     const nextRow = makeClone (row);
@@ -79,6 +83,12 @@ const _list = cfg => {
     else { addRows (baseRow, data); }
 };
 
+const _fill = cfg => {
+    const tapName = F.path (["cfg", "tap"]) (cfg);
+    const data = F.path (["cfg", "data"]) (cfg);
+    over (someTaps (document) (tapName)) (fillChildTaps (data));
+};
+
 const _init = cfg => F.prop ("fn") (cfg) ();
 
 // Actions
@@ -89,7 +99,8 @@ const actions = {
     HIDE: _visibility (hide),
     CLICK: _click,
     INIT: _init,
-    LIST: _list
+    LIST: _list,
+    FILL: _fill
 };
 
 // Action Creators
@@ -99,6 +110,7 @@ const tapClick = taps => ({action: "CLICK", taps});
 const tapList = tap => data => ({tap, data});
 const tapLoad = data => ({action: "LIST", data});
 const tapInit = fn => ({action: "INIT", fn});
+const tapFill = tap => data => ({action: "FILL", cfg: {tap, data}});
 
 // Dispatch
 const dispatch = F.compose (F.flip (F.prop) (actions), F.prop ("action"));

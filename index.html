@@ -22,8 +22,8 @@
 
 
             <div tap="ITEM">
-                Label <input type="text" /><br />
-                Info <input type="text" /><br />
+                Label <input tap="label" type="text" /><br />
+                Info <input tap="info" type="text" /><br />
                 <button tap="POST">Add!</button>
                 <button tap="PUT">Update!</button>
                 <button tap="DELETE">Delete!</button>
@@ -40,14 +40,17 @@
             const itemList = ["ADD", "ITEMLIST", "ITEMS"];
             const item = ["ITEM", "CANCEL"];
             const seeAdd = [
-                tapHide([...itemList, "PUT", "DELETE"]),
-                tapShow(["POST", ...item]),
+                tapHide ([...itemList, "PUT", "DELETE"]),
+                tapShow (["POST", ...item]),
             ];
-            const seeEdit = () => tapIt ([
-                tapHide([...itemList, "POST"]),
-                tapShow(["PUT", "DELETE", ...item]),
-            ]);
-            const seeItems = [tapHide(item), tapShow (itemList)];
+            const seeEdit = (e, task) => {
+                tapIt ([
+                    tapFill ("ITEM") (task),
+                    tapHide ([...itemList, "POST"]),
+                    tapShow (["PUT", "DELETE", ...item]),
+                ]);
+            };
+            const seeItems = [tapHide (item), tapShow (itemList)];
 
             // Init
             const appInit = async () => {
@@ -63,19 +66,12 @@
                 ]);
             };
 
-            const thing = (e, item) => {
-                console.log ("hi");
-                console.log (e.target);
-                console.log (e.currentTarget);
-                console.log (item);
-            };
-
             tapIt ([
                 tapHide (content),
                 tapClick ([
                     ["ADD", makeTap (seeAdd)],
                     ["CANCEL", makeTap (seeItems)],
-                    ["ITEMS", thing],
+                    ["ITEMS", seeEdit],
                 ]),
                 tapInit (appInit),
             ]);
