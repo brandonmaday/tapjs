@@ -9,7 +9,15 @@ const trim = s => s.trim();
 // DOM Select
 const allTaps = root => [...root.querySelectorAll("[tap]")];
 const someTaps = root => name => [...root.querySelectorAll(`[tap=${name}]`)];
-const tapName = e => e.getAttribute("tap");
+const tapNameAttr = e => e.getAttribute("tap");
+const tapObj = tap =>
+    ({[tapNameAttr (tap)]: F.prop ("innerText") (tap)});
+const tapObjs = F.compose (
+    F.reduce ((o, t) => F.merge (o) (tapObj (t))) ({}),
+    allTaps,
+    e => e.currentTarget
+);
+
 
 // DOM Checks
 
@@ -17,12 +25,16 @@ const tapName = e => e.getAttribute("tap");
 const setDisplay = v => e => e.style.display = v;
 const show = setDisplay ("");
 const hide = setDisplay ("none");
-const addClick = fn => e => e.addEventListener("click", fn);
-const drop = e => e.parentNode.removeChild(e);
-const text = data => e => e.innerText = data;
+const addClick = fn => e => { e.onclick = e => fn(e, tapObjs (e)); return e; }
+const drop = e => {e.parentNode.removeChild(e); return e;}
+const setText = e => data => {e.innerText = data; return e;}
 
 // DOM Adds
-makeClone = e => e.cloneNode(true);
+makeClone = e => {
+    let clone = e.cloneNode(true);
+    clone.onclick = F.prop ("onclick") (e);
+    return clone;
+}
 addNext = e => newE => e.parentNode.insertBefore(newE, e.nextSibling);
 
 // Reducers
@@ -37,36 +49,41 @@ const _click = cfg => {
     });
 };
 
-const _listElement = (ele, row) => {
-    over (allTaps (ele)) (e => { text (row[tapName (e)]) (e); show (e); });
-    show(ele);
+const fillChildTaps = (parent, data) => {
+    over (allTaps (parent)) (child => {
+        F.compose (
+            show,
+            setText (child),
+            F.flip (F.prop) (data),
+            tapNameAttr
+        ) (child);
+    });
 };
 
-const _listElements = (lastEle, rows) => {
-    if (F.emptyList (rows)) { return; }
-    const e = makeClone (lastEle);
-    addNext (lastEle) (e);
-    _listElement (e, F.head (rows));
-    _listElements (e, F.tail (rows));
+const addRows = (row, data) => {
+    fillChildTaps (row, F.head (data));
+    const rest = F.tail (data);
+    if (F.emptyList (rest)) { return; }
+    const nextRow = makeClone (row);
+    addNext (row) (nextRow);
+    addRows (nextRow, rest);
 }
 
 const _list = cfg => {
-    const listData = F.path (["data", "data"]) (cfg);
-    const tap = F.path (["data", "tap"]) (cfg);
-    const eles = someTaps (document) (tap);
-    const ele = F.head (eles);
-    over (F.tail (eles)) (drop);
-    if (F.emptyList (listData)) {
-        hide(ele);
-    } else {
-        _listElement (ele, F.head (listData));
-        _listElements (ele, F.tail (listData));
-    }
+    const tapName = F.path (["data", "tap"]) (cfg);
+    const data = F.path (["data", "data"]) (cfg);
+    const rows = someTaps (document) (tapName);
+    const baseRow = F.head (rows);
+    over (F.tail (rows)) (drop);
+    if (F.emptyList (data)) { hide(baseRow); }
+    else { addRows (baseRow, data); }
 };
 
 const _init = cfg => F.prop ("fn") (cfg) ();
 
 // Actions
+const makeTap = taps => () => tapIt(taps);
+
 const actions = {
     SHOW: _visibility (show),
     HIDE: _visibility (hide),

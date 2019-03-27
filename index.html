@@ -5,7 +5,10 @@
     </head>
     <body>
         <div tap="LOADING">Loading . . .</div>
+
         <div tap="CONTENT">
+
+
             <button tap="ADD">Add!</button>
             <table tap="ITEMLIST">
                 <thead><tr><th>Label</th><th>Info</th></tr></thead>
@@ -16,6 +19,8 @@
                     </tr>
                 </tbody>
             </table>
+
+
             <div tap="ITEM">
                 Label <input type="text" /><br />
                 Info <input type="text" /><br />
@@ -24,6 +29,7 @@
                 <button tap="DELETE">Delete!</button>
                 <button tap="CANCEL">Cancel</button>
             </div>
+
         </div>
 
         <script src="tap.js"></script>
@@ -31,20 +37,19 @@
             // Visible States
             const loading = ["LOADING"];
             const content = ["CONTENT"];
-            const item = ["ITEM"];
             const itemList = ["ADD", "ITEMLIST", "ITEMS"];
-            const viewItem = [...item, "CANCEL"];
-            const newItem = [...viewItem, "POST"];
-            const editButtons = ["PUT", "DELETE"];
-
-            // UI Actions
-            const showItemList = () => tapIt ([tapHide(item), tapShow (itemList)]);
-
-            const add = () => tapIt ([
-                tapHide([...itemList, ...editButtons]),
-                tapShow(newItem)
+            const item = ["ITEM", "CANCEL"];
+            const seeAdd = [
+                tapHide([...itemList, "PUT", "DELETE"]),
+                tapShow(["POST", ...item]),
+            ];
+            const seeEdit = () => tapIt ([
+                tapHide([...itemList, "POST"]),
+                tapShow(["PUT", "DELETE", ...item]),
             ]);
+            const seeItems = [tapHide(item), tapShow (itemList)];
 
+            // Init
             const appInit = async () => {
                 await sleep(1);
                 tapIt ([
@@ -52,18 +57,25 @@
                         {label: "task1", info: "info1"},
                         {label: "task2", info: "info2"},
                     ])),
-                    tapShow (content),
                     tapHide (loading),
+                    ...seeItems,
+                    tapShow (content),
                 ]);
-                showItemList();
             };
 
-            // Bind State
+            const thing = (e, item) => {
+                console.log ("hi");
+                console.log (e.target);
+                console.log (e.currentTarget);
+                console.log (item);
+            };
+
             tapIt ([
-                tapHide ([...content, ...item]),
+                tapHide (content),
                 tapClick ([
-                    ["ADD", add],
-                    ["CANCEL", showItemList],
+                    ["ADD", makeTap (seeAdd)],
+                    ["CANCEL", makeTap (seeItems)],
+                    ["ITEMS", thing],
                 ]),
                 tapInit (appInit),
             ]);
